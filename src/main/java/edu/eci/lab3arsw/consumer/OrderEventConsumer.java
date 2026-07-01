@@ -1,6 +1,6 @@
 package edu.eci.lab3arsw.consumer;
 
-import edu.eci.arsw.kafka.dto.OrderCreatedEvent;
+import edu.eci.lab3arsw.dto.OrderCreatedEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 

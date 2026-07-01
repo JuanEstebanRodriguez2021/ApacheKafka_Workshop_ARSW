@@ -59,3 +59,52 @@ Using http://localhost:8080 we open the interfaces to check the topics
 We check the messages for each topic in JSON format
 
 ![exampleMessage.png](docs%2FexampleMessage.png)
+
+## 4. Event Traceability
+
+- The event starts with an HTTP **POST** request to `/orders`.
+
+- `OrderController` creates an `OrderCreatedEvent` and sends it through `OrderEventProducer` to the Kafka topic **orders** using the **orderId** as the message key. 
+
+- Kafka stores the event in a partition (automatically assigned, e.g., Partition 0). 
+
+- `OrderEventConsumer`, which belongs to the **inventory-service** Consumer Group, listens to the `orders` topic and processes the event successfully.
+
+- Evidences:
+
+![event4.png](docs/event4.png)
+
+![response.png](docs/response.png)
+
+#  5. Event Flow Design
+
+## Proposed Event Flow
+
+| Producer | Event | Topic | Consumer | Consumer Group | Partition Key |
+|----------|-------|-------|----------|----------------|---------------|
+| Order Service | order-created | orders | Payment Service | payment-service | orderId |
+| Order Service | order-created | orders | Inventory Service | inventory-service | orderId |
+| Payment Service | payment-approved / payment-rejected | payments | Notification Service | notification-service | orderId |
+| Inventory Service | inventory-reserved / inventory-rejected | inventory | Notification Service | notification-service | orderId |
+| Payment Service | payment-approved | payments | Invoice Service | invoice-service | orderId |
+| Order Service | order-created | orders | Analytics Service | analytics-service | orderId |
+| Payment Service | payment-approved / payment-rejected | payments | Analytics Service | analytics-service | orderId |
+| Inventory Service | inventory-reserved / inventory-rejected | inventory | Analytics Service | analytics-service | orderId |
+| All Services | audit-record-created | audit | Audit Service | audit-service | correlationId |
+
+## Justification
+
+Using separate topics instead of a single global `events` topic provides several advantages:
+
+- Events are organized by business domain, making them easier to manage and maintain.
+- Each service subscribes only to the topics it needs, reducing unnecessary message processing.
+- Topics can have independent retention policies, partitions, and security configurations.
+- Consumer Groups can scale independently for each business capability.
+- Partitioning by `orderId` preserves the ordering of events related to the same order.
+- A single `events` topic would mix unrelated messages, increase network traffic, complicate filtering, and reduce scalability.
+
+
+
+
+
+
